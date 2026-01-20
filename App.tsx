@@ -66,6 +66,14 @@ const BookCover: React.FC<{ novel: Novel; onClick: () => void }> = ({ novel, onC
     <div
       onClick={onClick}
       className="group cursor-pointer perspective-1000 active:scale-[0.97] transition-all"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick();
+        }
+      }}
+      aria-label={`View novel: ${novel.title}, ${completion}% completed`}
     >
       <div className={`relative w-full aspect-[2/3] rounded-r-2xl rounded-l-sm bg-gradient-to-br ${colors[colorIndex]} book-shadow overflow-hidden p-8 flex flex-col justify-between transform group-hover:rotate-y-12 transition-all duration-500 ring-1 ring-black/10`}>
         <div className="absolute left-0 top-0 bottom-0 w-3 bg-black/20 backdrop-blur-sm" />
@@ -79,7 +87,15 @@ const BookCover: React.FC<{ novel: Novel; onClick: () => void }> = ({ novel, onC
         </div>
         <div className="relative z-10 mt-auto">
           <div className="h-1.5 w-full bg-black/20 rounded-full overflow-hidden mb-3 ring-1 ring-white/10">
-            <div className="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000" style={{ width: `${completion}%` }} />
+            <div
+              className="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000"
+              style={{ width: `${completion}%` }}
+              role="progressbar"
+              aria-valuenow={completion}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${completion}% completed`}
+            />
           </div>
           <div className="flex justify-between items-center text-[10px] text-white/90 font-black uppercase tracking-wider">
             <span>{completion}% WEAVED</span>
@@ -93,9 +109,13 @@ const BookCover: React.FC<{ novel: Novel; onClick: () => void }> = ({ novel, onC
 };
 
 const Header: React.FC<{ onBack?: () => void; onHome?: () => void; title: string; subtitle?: string; actions?: React.ReactNode; isOnline?: boolean }> = ({ onBack, onHome, title, subtitle, actions, isOnline }) => (
-  <header className="sticky top-0 z-40 glass-panel border-b border-white/20 px-6 py-5 flex items-center gap-4 shadow-sm">
+  <header className="sticky top-0 z-40 glass-panel border-b border-white/20 px-6 py-5 flex items-center gap-4 shadow-sm" role="banner">
     {onBack && (
-      <button onClick={onBack} className="p-2.5 -ml-2.5 hover:bg-black/5 rounded-2xl transition-all active:scale-90 text-slate-700">
+      <button
+        onClick={onBack}
+        className="p-2.5 -ml-2.5 hover:bg-black/5 rounded-2xl transition-all active:scale-90 text-slate-700"
+        aria-label="Go back"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
       </button>
     )}
@@ -104,7 +124,7 @@ const Header: React.FC<{ onBack?: () => void; onHome?: () => void; title: string
       <div className="flex items-center gap-2">
         {subtitle && <p className="text-[10px] font-black text-indigo-600/60 uppercase tracking-[0.2em] truncate">{subtitle}</p>}
         {isOnline !== undefined && (
-          <div className="flex items-center gap-1 bg-white/50 px-1.5 py-0.5 rounded-full border border-white/40">
+          <div className="flex items-center gap-1 bg-white/50 px-1.5 py-0.5 rounded-full border border-white/40" aria-label={isOnline ? "Online" : "Offline"}>
             <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-orange-500 shadow-[0_0_5px_rgba(249,115,22,0.5)]'}`} />
             <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">{isOnline ? 'Online' : 'Offline'}</span>
           </div>
@@ -113,7 +133,11 @@ const Header: React.FC<{ onBack?: () => void; onHome?: () => void; title: string
     </div>
     <div className="flex items-center gap-3">
       {actions}
-      <button onClick={onHome} className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-950 flex items-center justify-center text-white font-display font-black text-lg shadow-lg shadow-black/20 ring-1 ring-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer">
+      <button
+        onClick={onHome}
+        className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-950 flex items-center justify-center text-white font-display font-black text-lg shadow-lg shadow-black/20 ring-1 ring-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+        aria-label="Go to home"
+      >
         L
       </button>
     </div>
@@ -218,13 +242,22 @@ function AppContent() {
   }, []);
 
   const selectedNovel = novels.find(n => n.id === selectedNovelId);
-  const [newNovel, setNewNovel] = useState({ title: '', genre: 'High Fantasy', subGenres: [] as string[], premise: '' });
+  const [newNovel, setNewNovel] = useState<Omit<Novel, 'id' | 'characters' | 'outline' | 'lorebook' | 'referenceIds' | 'chapters' | 'createdAt'>>({
+    title: '',
+    genre: 'High Fantasy',
+    subGenres: [] as string[],
+    premise: '',
+    status: 'planning'
+  });
 
   const filteredGenres = ALL_GENRES.filter(g => g.toLowerCase().includes(genreSearch.toLowerCase()));
 
   const handleCreateNovel = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!newNovel.title || !newNovel.premise) return;
+    if (!newNovel.title || !newNovel.premise) {
+      alert("Please provide both a title and premise for your novel.");
+      return;
+    }
     if (!isOnline) {
       alert("Internet connection required to architect the story.");
       return;
@@ -232,6 +265,9 @@ function AppContent() {
     setIsGenerating(true);
     try {
       const data = await generateOutline(newNovel);
+      if (!data || !data.outline || !data.characters) {
+        throw new Error("Invalid response from AI service");
+      }
       const id = Date.now().toString();
       const novel: Novel = {
         id,
@@ -247,25 +283,41 @@ function AppContent() {
       setSelectedNovelId(id);
       setCurrentView('novel');
     } catch (error) {
-      console.error(error);
-      alert("Consultation with the AI Muse failed. Please check your network.");
+      console.error("Error creating novel:", error);
+      if (error instanceof Error) {
+        alert(`Failed to create novel: ${error.message}`);
+      } else {
+        alert("Consultation with the AI Muse failed. Please check your network and try again.");
+      }
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleWriteChapter = async (index: number, instruction?: string) => {
-    if (!selectedNovel) return;
+    if (!selectedNovel) {
+      alert("No novel selected.");
+      return;
+    }
     if (!isOnline) {
       alert("Internet connection required to weave the manuscript.");
       return;
     }
+    if (index < 0 || index >= selectedNovel.outline.length) {
+      alert("Invalid chapter index.");
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const activeRefs = references.filter(r => selectedNovel.referenceIds?.includes(r.id));
       const refContext = activeRefs.map(r => r.content).join('\n\n');
 
       const { title, content } = await generateChapterContent(selectedNovel, index, instruction, refContext);
+      if (!content) {
+        throw new Error("No content generated by AI service");
+      }
+
       const newChapter: Chapter = {
         id: Date.now().toString(),
         chapterNumber: index + 1,
@@ -278,6 +330,10 @@ function AppContent() {
       const updatedNovels = novels.map(n => {
         if (n.id === selectedNovel.id) {
           const updatedChapters = [...n.chapters];
+          // Ensure the array is long enough before setting the chapter
+          while (updatedChapters.length <= index) {
+            updatedChapters.push(null);
+          }
           updatedChapters[index] = newChapter;
           return { ...n, chapters: updatedChapters };
         }
@@ -289,7 +345,8 @@ function AppContent() {
       setInstructionText('');
 
       // Auto-summarize for Lorebook asynchronously
-      summarizeChapterForLorebook(selectedNovel, content).then(facts => {
+      try {
+        const facts = await summarizeChapterForLorebook(selectedNovel, content);
         if (facts.length > 0) {
           setNovels(prev => prev.map(n => {
             if (n.id === selectedNovel.id) {
@@ -299,10 +356,17 @@ function AppContent() {
             return n;
           }));
         }
-      });
+      } catch (loreError) {
+        console.error("Error summarizing chapter for lorebook:", loreError);
+        // Don't show error to user for lorebook since it's background task
+      }
     } catch (error) {
-      console.error(error);
-      alert("The manuscript was lost in transit. Try again.");
+      console.error("Error writing chapter:", error);
+      if (error instanceof Error) {
+        alert(`Failed to write chapter: ${error.message}`);
+      } else {
+        alert("The manuscript was lost in transit. Try again.");
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -350,7 +414,8 @@ function AppContent() {
     const updatedNovels = novels.map(n => {
       if (n.id === selectedNovel.id) {
         const updatedChapters = [...n.chapters];
-        if (updatedChapters[index]) {
+        // Ensure the array is long enough before accessing the chapter
+        if (index < updatedChapters.length && updatedChapters[index]) {
           updatedChapters[index] = { ...updatedChapters[index]!, status: 'completed' };
         }
         return { ...n, chapters: updatedChapters };
@@ -362,45 +427,53 @@ function AppContent() {
 
   const handleExportPdf = () => {
     if (!selectedNovel) return;
-    const doc = new jsPDF();
-    let y = 20;
 
-    // Title Page
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    doc.text(selectedNovel.title, 105, 80, { align: 'center' });
+    try {
+      const doc = new jsPDF();
+      let y = 20;
 
-    doc.setFontSize(14);
-    doc.text(`A ${selectedNovel.genre} Novel`, 105, 95, { align: 'center' });
-    doc.text("Generated by Levon AI", 105, 270, { align: 'center' });
+      // Title Page
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(28);
+      doc.text(selectedNovel.title.substring(0, 50), 105, 80, { align: 'center' }); // Limit title length
 
-    selectedNovel.chapters.forEach((ch, i) => {
-      if (!ch) return;
-      doc.addPage();
-      y = 20;
+      doc.setFontSize(14);
+      doc.text(`A ${selectedNovel.genre.substring(0, 30)} Novel`, 105, 95, { align: 'center' });
+      doc.text("Generated by Levon AI", 105, 270, { align: 'center' });
 
-      doc.setFontSize(10);
-      doc.text(`CHAPTER ${ch.chapterNumber}`, 105, y, { align: 'center' });
-      y += 15;
+      // Add chapters
+      selectedNovel.chapters.forEach((ch, i) => {
+        if (!ch) return;
 
-      doc.setFontSize(18);
-      doc.text(ch.title, 105, y, { align: 'center' });
-      y += 20;
+        doc.addPage();
+        y = 20;
 
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      const lines = doc.splitTextToSize(ch.content, 170);
-      lines.forEach((line: string) => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.text(line, 20, y);
-        y += 6;
+        doc.setFontSize(10);
+        doc.text(`CHAPTER ${ch.chapterNumber}`, 105, y, { align: 'center' });
+        y += 15;
+
+        doc.setFontSize(18);
+        doc.text(ch.title.substring(0, 40), 105, y, { align: 'center' }); // Limit title length
+        y += 20;
+
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        const lines = doc.splitTextToSize(ch.content.substring(0, 10000), 170); // Limit content length
+        lines.forEach((line: string) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(line, 20, y);
+          y += 6;
+        });
       });
-    });
 
-    doc.save(`${selectedNovel.title.replace(/\s+/g, '_')}_Levon.pdf`);
+      doc.save(`${selectedNovel.title.replace(/\s+/g, '_').substring(0, 30)}_Levon.pdf`);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Failed to export PDF. Please try again.");
+    }
   };
 
   const renderHome = () => (
@@ -981,15 +1054,17 @@ function AppContent() {
   };
 
   const CharacterModal = () => {
-    const [char, setChar] = useState<Character>(editingCharacter || {
-      id: Date.now().toString(),
-      name: '',
-      role: 'Supporting Character',
-      archetype: '',
-      description: '',
-      personality: '',
-      motivation: ''
-    });
+    const [char, setChar] = useState<Character>(
+      editingCharacter || {
+        id: Date.now().toString(),
+        name: '',
+        role: 'Supporting Character',
+        archetype: '',
+        description: '',
+        personality: '',
+        motivation: ''
+      }
+    );
 
     if (!isCharacterModalOpen) return null;
 
@@ -1010,32 +1085,69 @@ function AppContent() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Name</label>
-                <input type="text" className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none" value={char.name} onChange={e => setChar({ ...char, name: e.target.value })} />
+                <input
+                  type="text"
+                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
+                  value={char.name}
+                  onChange={e => setChar({ ...char, name: e.target.value })}
+                  aria-label="Character Name"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Archetype</label>
-                <input type="text" placeholder="e.g. The Mentor" className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none" value={char.archetype} onChange={e => setChar({ ...char, archetype: e.target.value })} />
+                <input
+                  type="text"
+                  placeholder="e.g. The Mentor"
+                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
+                  value={char.archetype}
+                  onChange={e => setChar({ ...char, archetype: e.target.value })}
+                  aria-label="Character Archetype"
+                />
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role in Narrative</label>
-              <input type="text" className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none" value={char.role} onChange={e => setChar({ ...char, role: e.target.value })} />
+              <input
+                type="text"
+                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
+                value={char.role}
+                onChange={e => setChar({ ...char, role: e.target.value })}
+                aria-label="Character Role"
+              />
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Inner Motivation / Goal</label>
-              <input type="text" className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none" value={char.motivation} onChange={e => setChar({ ...char, motivation: e.target.value })} />
+              <input
+                type="text"
+                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
+                value={char.motivation}
+                onChange={e => setChar({ ...char, motivation: e.target.value })}
+                aria-label="Character Motivation"
+              />
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Personality Essence</label>
-              <textarea rows={2} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none" value={char.personality} onChange={e => setChar({ ...char, personality: e.target.value })} />
+              <textarea
+                rows={2}
+                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none"
+                value={char.personality}
+                onChange={e => setChar({ ...char, personality: e.target.value })}
+                aria-label="Character Personality"
+              />
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description & Backstory</label>
-              <textarea rows={4} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none" value={char.description} onChange={e => setChar({ ...char, description: e.target.value })} />
+              <textarea
+                rows={4}
+                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none"
+                value={char.description}
+                onChange={e => setChar({ ...char, description: e.target.value })}
+                aria-label="Character Description"
+              />
             </div>
           </div>
 
@@ -1044,6 +1156,7 @@ function AppContent() {
               <button
                 onClick={() => deleteCharacter(char.id)}
                 className="p-4 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 transition-all"
+                aria-label="Delete Character"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
               </button>
@@ -1052,6 +1165,7 @@ function AppContent() {
               onClick={() => saveCharacter(char)}
               disabled={!char.name || !char.description}
               className="flex-1 rounded-2xl h-14"
+              aria-label={editingCharacter ? 'Update Character' : 'Save New Character'}
             >
               {editingCharacter ? 'Update Manifestation' : 'Bind to Story'}
             </Button>

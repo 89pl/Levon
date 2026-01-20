@@ -11,56 +11,66 @@ const getAI = () => new GoogleGenAI({ apiKey: API_KEY });
 export const generateOutline = async (novelInfo: { title: string; genre: string; subGenres: string[]; premise: string }): Promise<{ outline: OutlineItem[]; characters: Character[]; lorebook: string[]; referenceIds: string[] }> => {
   if (IS_MOCK) return { ...await mockGenerateOutline(novelInfo), lorebook: [], referenceIds: [] };
 
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: `Act as a world-class literary architect. Create a structured outline for a novel titled "${novelInfo.title}" in the ${novelInfo.genre} genre ${novelInfo.subGenres.length > 0 ? `with themes of ${novelInfo.subGenres.join(', ')}` : ''}. 
-    Premise: ${novelInfo.premise}.
-    Provide a list of 4-6 main characters and an outline of at least 8 chapters.`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          characters: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                id: { type: Type.STRING },
-                name: { type: Type.STRING },
-                role: { type: Type.STRING },
-                archetype: { type: Type.STRING },
-                description: { type: Type.STRING },
-                personality: { type: Type.STRING },
-                motivation: { type: Type.STRING }
-              },
-              required: ["id", "name", "role", "archetype", "description", "personality", "motivation"]
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `Act as a world-class literary architect. Create a structured outline for a novel titled "${novelInfo.title}" in the ${novelInfo.genre} genre ${novelInfo.subGenres.length > 0 ? `with themes of ${novelInfo.subGenres.join(', ')}` : ''}.
+      Premise: ${novelInfo.premise}.
+      Provide a list of 4-6 main characters and an outline of at least 8 chapters.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            characters: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  name: { type: Type.STRING },
+                  role: { type: Type.STRING },
+                  archetype: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  personality: { type: Type.STRING },
+                  motivation: { type: Type.STRING }
+                },
+                required: ["id", "name", "role", "archetype", "description", "personality", "motivation"]
+              }
+            },
+            outline: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  chapterNumber: { type: Type.NUMBER },
+                  title: { type: Type.STRING },
+                  summary: { type: Type.STRING },
+                  keyEvents: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING }
+                  }
+                },
+                required: ["chapterNumber", "title", "summary", "keyEvents"]
+              }
             }
           },
-          outline: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                chapterNumber: { type: Type.NUMBER },
-                title: { type: Type.STRING },
-                summary: { type: Type.STRING },
-                keyEvents: {
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING }
-                }
-              },
-              required: ["chapterNumber", "title", "summary", "keyEvents"]
-            }
-          }
-        },
-        required: ["characters", "outline"]
+          required: ["characters", "outline"]
+        }
       }
-    }
-  });
+    });
 
-  return JSON.parse(response.text);
+    // Validate response before parsing
+    if (!response.text) {
+      throw new Error("Empty response from AI service");
+    }
+
+    return JSON.parse(response.text);
+  } catch (error) {
+    console.error("Error generating outline:", error);
+    throw error;
+  }
 };
 
 export const generateChapterContent = async (
