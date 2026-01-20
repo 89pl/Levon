@@ -1,0 +1,8 @@
+
+{
+  "name": "Levon",
+  "description": "An AI-powered novelist that helps you craft detailed books chapter-by-chapter, generating outlines, characters, and high-quality prose.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:wght@700;900&display=swap');
+
+:root {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --accent: #f59e0b;
+  --bg-main: #f8fafc;
+  --bg-paper: #fcfaf2;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-serif {
+  font-family: 'Lora', serif;
+}
+
+.font-display {
+  font-family: 'Playfair Display', serif;
+}
+
+.paper-texture {
+  background-color: var(--bg-paper);
+  background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+  position: relative;
+}
+
+.paper-texture::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.05) 0%, transparent 5%, transparent 95%, rgba(0, 0, 0, 0.05) 100%);
+  pointer-events: none;
+}
+
+.glass-panel {
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+}
+
+.book-shadow {
+  box-shadow:
+    0 5px 15px rgba(0, 0, 0, 0.08),
+    0 15px 35px rgba(0, 0, 0, 0.1),
+    -5px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Custom Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.rotate-y-12 {
+  transform: rotateY(12deg);
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Typography Overhaul - Book Style */
+.prose-book p {
+  text-indent: 2em;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.prose-book p:first-of-type {
+  text-indent: 0;
+}
+
+.prose-book p:first-letter {
+  font-size: 3.5em;
+  float: left;
+  line-height: 0.8;
+  padding-right: 0.1em;
+  padding-top: 0.1em;
+  padding-left: 0.05em;
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+/* Transitions */
+.view-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.view-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
