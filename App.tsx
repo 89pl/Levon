@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import { extractTextFromPdf } from './pdfService';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import Settings from './views/Settings';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // --- Constants ---
 
@@ -1127,7 +1128,11 @@ function AppContent() {
         {currentView === 'novel' && renderNovelDetail()}
         {currentView === 'writer' && renderWriter()}
         {currentView === 'shelf' && renderShelf()}
-        {currentView === 'settings' && <Settings />}
+        {currentView === 'settings' && (
+          <ErrorBoundary name="Settings View">
+            <Settings />
+          </ErrorBoundary>
+        )}
       </main>
 
       {currentView !== 'writer' && <BottomNav />}
