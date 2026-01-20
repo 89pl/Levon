@@ -65,7 +65,7 @@ const BookCover: React.FC<{ novel: Novel; onClick: () => void }> = ({ novel, onC
   return (
     <div
       onClick={onClick}
-      className="group cursor-pointer perspective-1000 active:scale-[0.97] transition-all"
+      className="group cursor-pointer perspective-1000 active:scale-[0.97] transition-all animate-scale-in hover-lift"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -75,7 +75,7 @@ const BookCover: React.FC<{ novel: Novel; onClick: () => void }> = ({ novel, onC
       }}
       aria-label={`View novel: ${novel.title}, ${completion}% completed`}
     >
-      <div className={`relative w-full aspect-[2/3] rounded-r-2xl rounded-l-sm bg-gradient-to-br ${colors[colorIndex]} book-shadow overflow-hidden p-8 flex flex-col justify-between transform group-hover:rotate-y-12 transition-all duration-500 ring-1 ring-black/10`}>
+      <div className={`relative w-full aspect-[2/3] rounded-r-2xl rounded-l-sm bg-gradient-to-br ${colors[colorIndex]} book-shadow overflow-hidden p-8 flex flex-col justify-between transform group-hover:rotate-y-12 group-hover:shadow-2xl transition-all duration-500 ring-1 ring-black/10`}>
         <div className="absolute left-0 top-0 bottom-0 w-3 bg-black/20 backdrop-blur-sm" />
         <div className="relative z-10 space-y-2">
           <p className="text-[10px] font-black text-white/50 tracking-[0.2em] uppercase mb-1 truncate">
@@ -109,18 +109,18 @@ const BookCover: React.FC<{ novel: Novel; onClick: () => void }> = ({ novel, onC
 };
 
 const Header: React.FC<{ onBack?: () => void; onHome?: () => void; title: string; subtitle?: string; actions?: React.ReactNode; isOnline?: boolean }> = ({ onBack, onHome, title, subtitle, actions, isOnline }) => (
-  <header className="sticky top-0 z-40 glass-panel border-b border-white/20 px-6 py-5 flex items-center gap-4 shadow-sm" role="banner">
+  <header className="sticky top-0 z-40 glass-panel border-b border-white/20 dark:border-white/10 px-6 py-5 flex items-center gap-4 shadow-sm animate-slide-in-left" role="banner">
     {onBack && (
       <button
         onClick={onBack}
-        className="p-2.5 -ml-2.5 hover:bg-black/5 rounded-2xl transition-all active:scale-90 text-slate-700"
+        className="p-2.5 -ml-2.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-all active:scale-90 hover:scale-110 text-slate-700 dark:text-slate-300"
         aria-label="Go back"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
       </button>
     )}
     <div className="flex-1 overflow-hidden">
-      <h1 className="font-display text-2xl font-black tracking-tight truncate text-slate-900 leading-none mb-0.5">{title}</h1>
+      <h1 className="font-display text-2xl font-black tracking-tight truncate text-slate-900 dark:text-slate-100 leading-none mb-0.5 animate-fade-in">{title}</h1>
       <div className="flex items-center gap-2">
         {subtitle && <p className="text-[10px] font-black text-indigo-600/60 uppercase tracking-[0.2em] truncate">{subtitle}</p>}
         {isOnline !== undefined && (
@@ -135,7 +135,7 @@ const Header: React.FC<{ onBack?: () => void; onHome?: () => void; title: string
       {actions}
       <button
         onClick={onHome}
-        className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-950 flex items-center justify-center text-white font-display font-black text-lg shadow-lg shadow-black/20 ring-1 ring-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+        className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-950 dark:from-indigo-600 dark:to-indigo-800 flex items-center justify-center text-white font-display font-black text-lg shadow-lg shadow-black/20 ring-1 ring-white/10 hover:scale-110 active:scale-95 transition-all cursor-pointer hover-glow"
         aria-label="Go to home"
       >
         L
@@ -166,7 +166,7 @@ const Button: React.FC<{
       type={type}
       onClick={onClick}
       disabled={loading}
-      className={`px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.96] ${variants[variant]} ${className}`}
+      className={`px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.96] hover:scale-105 hover:shadow-2xl ${variants[variant]} ${className}`}
     >
       {loading ? (
         <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -477,10 +477,10 @@ function AppContent() {
   };
 
   const renderHome = () => (
-    <div className="p-8 space-y-12 pb-32">
+    <div className="p-8 space-y-12 pb-32 animate-fade-in">
 
       {novels.length === 0 ? (
-        <div className="py-20 text-center space-y-8 animate-float">
+        <div className="py-20 text-center space-y-8 animate-bounce-in">
           <div className="w-32 h-32 bg-white rounded-[2.5rem] flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-2xl shadow-slate-200/50">
             <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>
           </div>
@@ -491,7 +491,7 @@ function AppContent() {
           <Button onClick={() => setCurrentView('create')} variant="primary" className="mx-auto rounded-full px-10 h-14">Architect a New World</Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 stagger-animation">
           {novels.map(novel => (
             <BookCover
               key={novel.id}
