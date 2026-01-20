@@ -40,8 +40,18 @@ export const useSettings = () => {
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [settings, setSettings] = useState<Settings>(() => {
-        const saved = localStorage.getItem('levon-settings-v1');
-        return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+        try {
+            const saved = localStorage.getItem('levon-settings-v1');
+            if (!saved) return DEFAULT_SETTINGS;
+
+            const parsed = JSON.parse(saved);
+            // Fix: Handle null/incomplete objects by merging with DEFAULT_SETTINGS
+            // This prevents crashes if local storage has corrupt data or partial updates
+            return parsed && typeof parsed === 'object' ? { ...DEFAULT_SETTINGS, ...parsed } : DEFAULT_SETTINGS;
+        } catch (error) {
+            console.warn('Failed to parse settings from localStorage:', error);
+            return DEFAULT_SETTINGS;
+        }
     });
 
     // Persist settings
