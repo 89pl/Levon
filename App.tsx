@@ -878,74 +878,69 @@ function AppContent() {
             <div className={`mt-24 text-center opacity-30 ${currentTemplate.textClass}`}>
               <p className="text-xs font-serif italic">~ End of Chapter ~</p>
             </div>
+
+            <div className="mt-32 pb-20 flex flex-col items-center opacity-10">
+              <div className="h-px w-32 bg-current mb-4" />
+              <p className="font-display italic text-2xl tracking-widest uppercase">The End</p>
+            </div>
           </article>
+        </div>
+
+        <div className="p-6 glass-panel border-t border-white/40 shadow-2xl z-40">
+          <div className="max-w-prose mx-auto space-y-4">
+            {chapter.status !== 'completed' && (
+              <div className="flex gap-4">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    placeholder="Whisper a revision... (e.g. 'Add more tension')"
+                    className="w-full pl-6 pr-16 py-5 rounded-[2rem] bg-white border-2 border-slate-100 shadow-xl shadow-slate-900/5 outline-none focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500/50 transition-all font-bold text-sm"
+                    value={instructionText}
+                    onChange={(e) => setInstructionText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && instructionText.trim()) {
+                        handleWriteChapter(selectedChapterIndex, instructionText);
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => instructionText.trim() && handleWriteChapter(selectedChapterIndex, instructionText)}
+                    disabled={isGenerating || !instructionText.trim()}
+                    className="absolute right-2.5 top-2.5 w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-50"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg>
+                  </button>
+                </div>
+                <button
+                  onClick={() => { if (window.confirm("Once sealed, this chapter cannot be re-weaved. Continue?")) markChapterComplete(selectedChapterIndex); }}
+                  className="px-8 bg-emerald-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  Seal Chapter
+                </button>
+              </div>
+            )}
+
+            {chapter.status === 'completed' && (
+              <div className="py-2 text-center">
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 py-3 rounded-2xl border border-emerald-100 italic">This manuscript page is sealed and preserved in history.</p>
+              </div>
+            )}
+
+            {isGenerating && (
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Consulting the AI Muse</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   };
 
-  <div className="mt-32 pb-20 flex flex-col items-center opacity-10">
-    <div className="h-px w-32 bg-current mb-4" />
-    <p className="font-display italic text-2xl tracking-widest uppercase">The End</p>
-  </div>
-          </article >
-        </div >
-
-    <div className="p-6 glass-panel border-t border-white/40 shadow-2xl z-40">
-      <div className="max-w-prose mx-auto space-y-4">
-        {chapter.status !== 'completed' && (
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Whisper a revision... (e.g. 'Add more tension')"
-                className="w-full pl-6 pr-16 py-5 rounded-[2rem] bg-white border-2 border-slate-100 shadow-xl shadow-slate-900/5 outline-none focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500/50 transition-all font-bold text-sm"
-                value={instructionText}
-                onChange={(e) => setInstructionText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && instructionText.trim()) {
-                    handleWriteChapter(selectedChapterIndex, instructionText);
-                  }
-                }}
-              />
-              <button
-                onClick={() => instructionText.trim() && handleWriteChapter(selectedChapterIndex, instructionText)}
-                disabled={isGenerating || !instructionText.trim()}
-                className="absolute right-2.5 top-2.5 w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-50"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg>
-              </button>
-            </div>
-            <button
-              onClick={() => { if (window.confirm("Once sealed, this chapter cannot be re-weaved. Continue?")) markChapterComplete(selectedChapterIndex); }}
-              className="px-8 bg-emerald-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all"
-            >
-              Seal Chapter
-            </button>
-          </div>
-        )}
-
-        {chapter.status === 'completed' && (
-          <div className="py-2 text-center">
-            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 py-3 rounded-2xl border border-emerald-100 italic">This manuscript page is sealed and preserved in history.</p>
-          </div>
-        )}
-
-        {isGenerating && (
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" />
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]" />
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Consulting the AI Muse</span>
-          </div>
-        )}
-      </div>
-    </div>
-      </div >
-    );
-};
-
-const renderShelf = () => {
+  const renderShelf = () => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
