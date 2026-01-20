@@ -826,454 +826,480 @@ function AppContent() {
     const chapter = selectedNovel.chapters[selectedChapterIndex];
     if (!chapter) return <div className="p-20 text-center font-display text-slate-300 italic">Manuscript page missing...</div>;
 
+    // Use settings from context
+    const { settings, currentTemplate, currentFont } = useSettings();
+
     const wordCount = chapter.content.split(/\s+/).length;
     const readingTime = Math.ceil(wordCount / 200);
 
     return (
-      <div className="h-full flex flex-col bg-[#fffaf5]">
-        <header className="glass-panel border-b border-white/40 px-6 py-4 flex items-center justify-between shadow-sm z-40">
-          <button onClick={() => setCurrentView('novel')} className="p-2.5 -ml-2.5 hover:bg-black/5 rounded-2xl transition-all active:scale-90 text-slate-700">
+      <div
+        className={`h-full flex flex-col transition-colors duration-700 ${currentTemplate.bgClass}`}
+        style={{
+          backgroundImage: currentTemplate.bgImage ? `url(${currentTemplate.bgImage})` : currentTemplate.bgGradient,
+          backgroundColor: !currentTemplate.bgImage && !currentTemplate.bgGradient ? undefined : 'transparent'
+        }}
+      >
+        <header className={`glass-panel border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-sm z-40 ${currentTemplate.category === 'dark' || currentTemplate.category === 'cyber' ? 'bg-black/20 text-white' : 'bg-white/40 text-slate-900'}`}>
+          <button onClick={() => setCurrentView('novel')} className={`p-2.5 -ml-2.5 rounded-2xl transition-all active:scale-90 ${currentTemplate.category === 'dark' ? 'text-white/70 hover:bg-white/10' : 'text-slate-700 hover:bg-black/5'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
           </button>
           <div className="text-center flex-1 mx-4 max-w-[200px]">
-            <p className="text-[9px] font-black text-indigo-600/60 uppercase tracking-[0.2em] mb-0.5">Chapter {chapter.chapterNumber}</p>
-            <h3 className="font-display font-black text-slate-900 truncate leading-tight tracking-tight">{chapter.title}</h3>
+            <p className="text-[9px] font-black opacity-60 uppercase tracking-[0.2em] mb-0.5" style={{ color: currentTemplate.accentColor }}>Chapter {chapter.chapterNumber}</p>
+            <h3 className={`font-display font-black truncate leading-tight tracking-tight ${currentTemplate.textClass}`}>{chapter.title}</h3>
           </div>
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black text-slate-900 leading-none">{wordCount} WORDS</span>
-            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{readingTime} MIN READ</span>
+          <div className={`flex flex-col items-end ${currentTemplate.textClass}`}>
+            <span className="text-[10px] font-black leading-none">{wordCount} WORDS</span>
+            <span className="text-[8px] font-bold opacity-40 uppercase tracking-tighter mt-1">{readingTime} MIN READ</span>
           </div>
         </header>
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar paper-texture px-8 py-16 md:px-20 scroll-smooth">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-8 py-16 md:px-20 scroll-smooth">
           <article className="max-w-prose mx-auto">
-            <div className="mb-16 flex flex-col items-center opacity-10">
+            <div className={`mb-16 flex flex-col items-center opacity-20 ${currentTemplate.textClass}`}>
               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M2 12h20" /></svg>
               <div className="h-px w-24 bg-current mt-4" />
             </div>
 
-            <div className="font-serif prose-book text-[1.15rem] leading-[1.8] text-slate-800 space-y-0 selection:bg-indigo-100">
+            <div
+              className={`prose-book space-y-0 selection:bg-indigo-500/30 ${currentTemplate.textClass}`}
+              style={{
+                fontFamily: settings.fontFamily,
+                fontSize: `${settings.fontSize}px`,
+                lineHeight: settings.lineHeight,
+                fontWeight: settings.fontWeight
+              }}
+            >
               {chapter.content.split('\n\n').map((para, i) => (
                 <p key={i} className="text-justify">{para}</p>
               ))}
             </div>
 
-            <div className="mt-32 pb-20 flex flex-col items-center opacity-10">
-              <div className="h-px w-32 bg-current mb-4" />
-              <p className="font-display italic text-2xl tracking-widest uppercase">The End</p>
+            <div className={`mt-24 text-center opacity-30 ${currentTemplate.textClass}`}>
+              <p className="text-xs font-serif italic">~ End of Chapter ~</p>
             </div>
           </article>
         </div>
-
-        <div className="p-6 glass-panel border-t border-white/40 shadow-2xl z-40">
-          <div className="max-w-prose mx-auto space-y-4">
-            {chapter.status !== 'completed' && (
-              <div className="flex gap-4">
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    placeholder="Whisper a revision... (e.g. 'Add more tension')"
-                    className="w-full pl-6 pr-16 py-5 rounded-[2rem] bg-white border-2 border-slate-100 shadow-xl shadow-slate-900/5 outline-none focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500/50 transition-all font-bold text-sm"
-                    value={instructionText}
-                    onChange={(e) => setInstructionText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && instructionText.trim()) {
-                        handleWriteChapter(selectedChapterIndex, instructionText);
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={() => instructionText.trim() && handleWriteChapter(selectedChapterIndex, instructionText)}
-                    disabled={isGenerating || !instructionText.trim()}
-                    className="absolute right-2.5 top-2.5 w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-50"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg>
-                  </button>
-                </div>
-                <button
-                  onClick={() => { if (window.confirm("Once sealed, this chapter cannot be re-weaved. Continue?")) markChapterComplete(selectedChapterIndex); }}
-                  className="px-8 bg-emerald-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all"
-                >
-                  Seal Chapter
-                </button>
-              </div>
-            )}
-
-            {chapter.status === 'completed' && (
-              <div className="py-2 text-center">
-                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 py-3 rounded-2xl border border-emerald-100 italic">This manuscript page is sealed and preserved in history.</p>
-              </div>
-            )}
-
-            {isGenerating && (
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Consulting the AI Muse</span>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     );
   };
 
-  const renderShelf = () => {
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  <div className="mt-32 pb-20 flex flex-col items-center opacity-10">
+    <div className="h-px w-32 bg-current mb-4" />
+    <p className="font-display italic text-2xl tracking-widest uppercase">The End</p>
+  </div>
+          </article >
+        </div >
 
-      setIsGenerating(true);
-      try {
-        const text = file.name.endsWith('.pdf')
-          ? await extractTextFromPdf(file)
-          : await file.text();
-
-        const newRef: Reference = {
-          id: Date.now().toString(),
-          name: file.name,
-          content: text,
-          addedAt: Date.now()
-        };
-        setReferences([newRef, ...references]);
-      } catch (err) {
-        console.error(err);
-        alert("The parchment was unreadable.");
-      } finally {
-        setIsGenerating(false);
-      }
-    };
-
-    return (
-      <div className="p-8 space-y-8 pb-32">
-        <div className="space-y-2">
-          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Reference Library</p>
-          <h2 className="text-4xl font-display font-black text-slate-900 tracking-tight leading-none">The Shelf</h2>
-          <p className="text-sm text-slate-500 font-medium max-w-[20ch]">Upload manuscripts to guide the AI Muse's prose.</p>
-        </div>
-
-        <div className="relative group">
-          <input
-            type="file"
-            accept=".pdf,.txt"
-            onChange={handleFileUpload}
-            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-          />
-          <div className="border-4 border-dashed border-slate-200 rounded-[2.5rem] p-12 flex flex-col items-center justify-center gap-4 group-hover:border-indigo-200 group-hover:bg-indigo-50/30 transition-all">
-            <div className="w-16 h-16 bg-white rounded-3xl shadow-xl flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-            </div>
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Enshrine Metadata</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {references.map(ref => (
-            <div key={ref.id} className="p-6 bg-white rounded-[2rem] border-2 border-slate-50 shadow-sm flex items-center gap-4 group">
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14.5 2 14.5 7 20 7" /></svg>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <h4 className="font-bold text-sm text-slate-900 truncate">{ref.name}</h4>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Reference Archive</p>
-              </div>
+    <div className="p-6 glass-panel border-t border-white/40 shadow-2xl z-40">
+      <div className="max-w-prose mx-auto space-y-4">
+        {chapter.status !== 'completed' && (
+          <div className="flex gap-4">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Whisper a revision... (e.g. 'Add more tension')"
+                className="w-full pl-6 pr-16 py-5 rounded-[2rem] bg-white border-2 border-slate-100 shadow-xl shadow-slate-900/5 outline-none focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500/50 transition-all font-bold text-sm"
+                value={instructionText}
+                onChange={(e) => setInstructionText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && instructionText.trim()) {
+                    handleWriteChapter(selectedChapterIndex, instructionText);
+                  }
+                }}
+              />
               <button
-                onClick={() => setReferences(prev => prev.filter(r => r.id !== ref.id))}
-                className="p-2 text-slate-300 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"
+                onClick={() => instructionText.trim() && handleWriteChapter(selectedChapterIndex, instructionText)}
+                disabled={isGenerating || !instructionText.trim()}
+                className="absolute right-2.5 top-2.5 w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-50"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg>
               </button>
             </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const views: Record<View, () => React.ReactNode> = {
-    home: renderHome,
-    create: renderCreate,
-    novel: renderNovelDetail,
-    writer: renderWriter,
-    shelf: renderShelf
-  };
-
-  const LoreModal = () => {
-    const [fact, setFact] = useState(editingLoreIndex !== null ? (selectedNovel?.lorebook[editingLoreIndex] || '') : '');
-
-    if (!isLoreModalOpen || !selectedNovel) return null;
-
-    const saveLore = () => {
-      const currentLore = selectedNovel.lorebook || [];
-      const updated = editingLoreIndex !== null
-        ? currentLore.map((f, i) => i === editingLoreIndex ? fact : f)
-        : [fact, ...currentLore];
-
-      setNovels(prev => prev.map(n => n.id === selectedNovel.id ? { ...n, lorebook: updated } : n));
-      setIsLoreModalOpen(false);
-    };
-
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-        <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-          <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-            <div>
-              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.25em] mb-1">Akashic Records</p>
-              <h3 className="text-2xl font-display font-black text-slate-900">{editingLoreIndex !== null ? 'Modify Fact' : 'Record New Fact'}</h3>
-            </div>
-            <button onClick={() => setIsLoreModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-2xl transition-all">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+            <button
+              onClick={() => { if (window.confirm("Once sealed, this chapter cannot be re-weaved. Continue?")) markChapterComplete(selectedChapterIndex); }}
+              className="px-8 bg-emerald-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all"
+            >
+              Seal Chapter
             </button>
           </div>
+        )}
 
-          <div className="p-8 space-y-4">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fact / Memory Context</label>
-            <textarea
-              autoFocus
-              rows={5}
-              className="w-full bg-slate-50 border-2 border-slate-50 rounded-[2rem] px-6 py-5 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none leading-relaxed"
-              placeholder="e.g. The protagonist discovered that the kingdom's silver is actually cursed, turning to dust in moonlight."
-              value={fact}
-              onChange={e => setFact(e.target.value)}
+        {chapter.status === 'completed' && (
+          <div className="py-2 text-center">
+            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 py-3 rounded-2xl border border-emerald-100 italic">This manuscript page is sealed and preserved in history.</p>
+          </div>
+        )}
+
+        {isGenerating && (
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]" />
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Consulting the AI Muse</span>
+          </div>
+        )}
+      </div>
+    </div>
+      </div >
+    );
+};
+
+const renderShelf = () => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsGenerating(true);
+    try {
+      const text = file.name.endsWith('.pdf')
+        ? await extractTextFromPdf(file)
+        : await file.text();
+
+      const newRef: Reference = {
+        id: Date.now().toString(),
+        name: file.name,
+        content: text,
+        addedAt: Date.now()
+      };
+      setReferences([newRef, ...references]);
+    } catch (err) {
+      console.error(err);
+      alert("The parchment was unreadable.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="p-8 space-y-8 pb-32">
+      <div className="space-y-2">
+        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Reference Library</p>
+        <h2 className="text-4xl font-display font-black text-slate-900 tracking-tight leading-none">The Shelf</h2>
+        <p className="text-sm text-slate-500 font-medium max-w-[20ch]">Upload manuscripts to guide the AI Muse's prose.</p>
+      </div>
+
+      <div className="relative group">
+        <input
+          type="file"
+          accept=".pdf,.txt"
+          onChange={handleFileUpload}
+          className="absolute inset-0 opacity-0 cursor-pointer z-10"
+        />
+        <div className="border-4 border-dashed border-slate-200 rounded-[2.5rem] p-12 flex flex-col items-center justify-center gap-4 group-hover:border-indigo-200 group-hover:bg-indigo-50/30 transition-all">
+          <div className="w-16 h-16 bg-white rounded-3xl shadow-xl flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+          </div>
+          <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Enshrine Metadata</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {references.map(ref => (
+          <div key={ref.id} className="p-6 bg-white rounded-[2rem] border-2 border-slate-50 shadow-sm flex items-center gap-4 group">
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14.5 2 14.5 7 20 7" /></svg>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <h4 className="font-bold text-sm text-slate-900 truncate">{ref.name}</h4>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Reference Archive</p>
+            </div>
+            <button
+              onClick={() => setReferences(prev => prev.filter(r => r.id !== ref.id))}
+              className="p-2 text-slate-300 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const views: Record<View, () => React.ReactNode> = {
+  home: renderHome,
+  create: renderCreate,
+  novel: renderNovelDetail,
+  writer: renderWriter,
+  shelf: renderShelf
+};
+
+const LoreModal = () => {
+  const [fact, setFact] = useState(editingLoreIndex !== null ? (selectedNovel?.lorebook[editingLoreIndex] || '') : '');
+
+  if (!isLoreModalOpen || !selectedNovel) return null;
+
+  const saveLore = () => {
+    const currentLore = selectedNovel.lorebook || [];
+    const updated = editingLoreIndex !== null
+      ? currentLore.map((f, i) => i === editingLoreIndex ? fact : f)
+      : [fact, ...currentLore];
+
+    setNovels(prev => prev.map(n => n.id === selectedNovel.id ? { ...n, lorebook: updated } : n));
+    setIsLoreModalOpen(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+          <div>
+            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.25em] mb-1">Akashic Records</p>
+            <h3 className="text-2xl font-display font-black text-slate-900">{editingLoreIndex !== null ? 'Modify Fact' : 'Record New Fact'}</h3>
+          </div>
+          <button onClick={() => setIsLoreModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-2xl transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
+        </div>
+
+        <div className="p-8 space-y-4">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fact / Memory Context</label>
+          <textarea
+            autoFocus
+            rows={5}
+            className="w-full bg-slate-50 border-2 border-slate-50 rounded-[2rem] px-6 py-5 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none leading-relaxed"
+            placeholder="e.g. The protagonist discovered that the kingdom's silver is actually cursed, turning to dust in moonlight."
+            value={fact}
+            onChange={e => setFact(e.target.value)}
+          />
+        </div>
+
+        <div className="p-8 border-t border-slate-100">
+          <Button
+            onClick={saveLore}
+            disabled={!fact.trim()}
+            className="w-full rounded-2xl h-14"
+          >
+            {editingLoreIndex !== null ? 'Enshrine Change' : 'Commit to Memory'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CharacterModal = () => {
+  const [char, setChar] = useState<Character>(
+    editingCharacter || {
+      id: Date.now().toString(),
+      name: '',
+      role: 'Supporting Character',
+      archetype: '',
+      description: '',
+      personality: '',
+      motivation: ''
+    }
+  );
+
+  if (!isCharacterModalOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+          <div>
+            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.25em] mb-1">Dramatis Personae</p>
+            <h3 className="text-2xl font-display font-black text-slate-900">{editingCharacter ? 'Refine Soul' : 'Birth New Character'}</h3>
+          </div>
+          <button onClick={() => setIsCharacterModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-2xl transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Name</label>
+              <input
+                type="text"
+                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
+                value={char.name}
+                onChange={e => setChar({ ...char, name: e.target.value })}
+                aria-label="Character Name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Archetype</label>
+              <input
+                type="text"
+                placeholder="e.g. The Mentor"
+                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
+                value={char.archetype}
+                onChange={e => setChar({ ...char, archetype: e.target.value })}
+                aria-label="Character Archetype"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role in Narrative</label>
+            <input
+              type="text"
+              className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
+              value={char.role}
+              onChange={e => setChar({ ...char, role: e.target.value })}
+              aria-label="Character Role"
             />
           </div>
 
-          <div className="p-8 border-t border-slate-100">
-            <Button
-              onClick={saveLore}
-              disabled={!fact.trim()}
-              className="w-full rounded-2xl h-14"
-            >
-              {editingLoreIndex !== null ? 'Enshrine Change' : 'Commit to Memory'}
-            </Button>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Inner Motivation / Goal</label>
+            <input
+              type="text"
+              className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
+              value={char.motivation}
+              onChange={e => setChar({ ...char, motivation: e.target.value })}
+              aria-label="Character Motivation"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Personality Essence</label>
+            <textarea
+              rows={2}
+              className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none"
+              value={char.personality}
+              onChange={e => setChar({ ...char, personality: e.target.value })}
+              aria-label="Character Personality"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description & Backstory</label>
+            <textarea
+              rows={4}
+              className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none"
+              value={char.description}
+              onChange={e => setChar({ ...char, description: e.target.value })}
+              aria-label="Character Description"
+            />
           </div>
         </div>
-      </div>
-    );
-  };
 
-  const CharacterModal = () => {
-    const [char, setChar] = useState<Character>(
-      editingCharacter || {
-        id: Date.now().toString(),
-        name: '',
-        role: 'Supporting Character',
-        archetype: '',
-        description: '',
-        personality: '',
-        motivation: ''
-      }
-    );
-
-    if (!isCharacterModalOpen) return null;
-
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-        <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-          <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-            <div>
-              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.25em] mb-1">Dramatis Personae</p>
-              <h3 className="text-2xl font-display font-black text-slate-900">{editingCharacter ? 'Refine Soul' : 'Birth New Character'}</h3>
-            </div>
-            <button onClick={() => setIsCharacterModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-2xl transition-all">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+        <div className="p-8 border-t border-slate-100 flex gap-4">
+          {editingCharacter && (
+            <button
+              onClick={() => deleteCharacter(char.id)}
+              className="p-4 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 transition-all"
+              aria-label="Delete Character"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
             </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Name</label>
-                <input
-                  type="text"
-                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
-                  value={char.name}
-                  onChange={e => setChar({ ...char, name: e.target.value })}
-                  aria-label="Character Name"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Archetype</label>
-                <input
-                  type="text"
-                  placeholder="e.g. The Mentor"
-                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
-                  value={char.archetype}
-                  onChange={e => setChar({ ...char, archetype: e.target.value })}
-                  aria-label="Character Archetype"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role in Narrative</label>
-              <input
-                type="text"
-                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
-                value={char.role}
-                onChange={e => setChar({ ...char, role: e.target.value })}
-                aria-label="Character Role"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Inner Motivation / Goal</label>
-              <input
-                type="text"
-                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none"
-                value={char.motivation}
-                onChange={e => setChar({ ...char, motivation: e.target.value })}
-                aria-label="Character Motivation"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Personality Essence</label>
-              <textarea
-                rows={2}
-                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none"
-                value={char.personality}
-                onChange={e => setChar({ ...char, personality: e.target.value })}
-                aria-label="Character Personality"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description & Backstory</label>
-              <textarea
-                rows={4}
-                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all outline-none resize-none"
-                value={char.description}
-                onChange={e => setChar({ ...char, description: e.target.value })}
-                aria-label="Character Description"
-              />
-            </div>
-          </div>
-
-          <div className="p-8 border-t border-slate-100 flex gap-4">
-            {editingCharacter && (
-              <button
-                onClick={() => deleteCharacter(char.id)}
-                className="p-4 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 transition-all"
-                aria-label="Delete Character"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-              </button>
-            )}
-            <Button
-              onClick={() => saveCharacter(char)}
-              disabled={!char.name || !char.description}
-              className="flex-1 rounded-2xl h-14"
-              aria-label={editingCharacter ? 'Update Character' : 'Save New Character'}
-            >
-              {editingCharacter ? 'Update Manifestation' : 'Bind to Story'}
-            </Button>
-          </div>
+          )}
+          <Button
+            onClick={() => saveCharacter(char)}
+            disabled={!char.name || !char.description}
+            className="flex-1 rounded-2xl h-14"
+            aria-label={editingCharacter ? 'Update Character' : 'Save New Character'}
+          >
+            {editingCharacter ? 'Update Manifestation' : 'Bind to Story'}
+          </Button>
         </div>
       </div>
-    );
-  };
-
-  const BottomNav = () => (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 px-6 py-3 flex justify-around items-center z-50 max-w-md mx-auto rounded-t-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-      <button
-        onClick={() => { setCurrentView('home'); setSelectedNovelId(null); }}
-        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'home' || currentView === 'novel' ? 'text-indigo-600 scale-110' : 'text-slate-400 opacity-60'}`}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
-        <span className="text-[10px] font-black uppercase tracking-tighter">Library</span>
-      </button>
-
-      <button
-        onClick={() => setCurrentView('create')}
-        className="w-14 h-14 bg-indigo-600 rounded-[1.5rem] -mt-10 shadow-xl shadow-indigo-600/30 flex items-center justify-center text-white transition-all active:scale-90 hover:scale-105"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-      </button>
-
-      <button
-        onClick={() => setCurrentView('shelf')}
-        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'shelf' ? 'text-indigo-600 scale-110' : 'text-slate-400 opacity-60'}`}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
-        <span className="text-[10px] font-black uppercase tracking-tighter">The Shelf</span>
-      </button>
-    </nav>
-  );
-
-  return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-100 shadow-2xl relative flex flex-col">
-      {currentView !== 'writer' && (
-        <Header
-          onBack={currentView !== 'home' && currentView !== 'shelf' && currentView !== 'settings' ? () => {
-            if (currentView === 'novel') { setSelectedNovelId(null); setCurrentView('home'); }
-            else setCurrentView('home');
-          } : undefined}
-          onHome={() => { setSelectedNovelId(null); setCurrentView('home'); }}
-          title={currentView === 'home' ? 'Library' : currentView === 'create' ? 'Inception' : currentView === 'shelf' ? 'The Shelf' : currentView === 'settings' ? 'Config' : 'Manuscript'}
-          subtitle={currentView === 'home' ? 'Your Sanctuary' : currentView === 'novel' ? selectedNovel?.title : currentView === 'settings' ? 'System' : currentView === 'shelf' ? 'Reference Materials' : undefined}
-          isOnline={isOnline}
-          actions={
-            <>
-              {currentView === 'home' && (
-                <button
-                  onClick={() => setCurrentView('settings')}
-                  className="w-10 h-10 rounded-2xl bg-white text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm border border-slate-100 flex items-center justify-center transition-all"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-                </button>
-              )}
-              {currentView === 'novel' && (
-                <button
-                  onClick={handleExportPdf}
-                  className="p-3 bg-white text-indigo-600 rounded-2xl shadow-sm border border-indigo-100 hover:scale-110 active:scale-95 transition-all"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                </button>
-              )}
-            </>
-          }
-        />
-      )}
-      <main className={`flex-1 overflow-y-auto no-scrollbar ${currentView !== 'writer' ? 'pb-32' : ''}`}>
-        {currentView === 'home' && renderHome()}
-        {currentView === 'create' && renderCreate()}
-        {currentView === 'novel' && renderNovelDetail()}
-        {currentView === 'writer' && renderWriter()}
-        {currentView === 'shelf' && renderShelf()}
-        {currentView === 'settings' && (
-          <ErrorBoundary name="Settings View">
-            <Settings />
-          </ErrorBoundary>
-        )}
-      </main>
-
-      {currentView !== 'writer' && <BottomNav />}
-      <CharacterModal />
-      <LoreModal />
-      {isGenerating && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-8 text-center">
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl space-y-6 max-w-xs w-full transform animate-in fade-in zoom-in duration-300">
-            <div className="relative w-20 h-20 mx-auto">
-              <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
-              <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center text-indigo-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="font-display font-black text-xl text-slate-900 ink-loading tracking-tight">Drafting Manuscript...</p>
-              <p className="text-slate-400 text-sm leading-relaxed">The AI is composing original prose. This may take 15-30 seconds.</p>
-            </div>
-            <div className="flex gap-1 justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-200 animate-bounce [animation-delay:-0.3s]" />
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:-0.15s]" />
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
+};
+
+const BottomNav = () => (
+  <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 px-6 py-3 flex justify-around items-center z-50 max-w-md mx-auto rounded-t-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+    <button
+      onClick={() => { setCurrentView('home'); setSelectedNovelId(null); }}
+      className={`flex flex-col items-center gap-1 transition-all ${currentView === 'home' || currentView === 'novel' ? 'text-indigo-600 scale-110' : 'text-slate-400 opacity-60'}`}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+      <span className="text-[10px] font-black uppercase tracking-tighter">Library</span>
+    </button>
+
+    <button
+      onClick={() => setCurrentView('create')}
+      className="w-14 h-14 bg-indigo-600 rounded-[1.5rem] -mt-10 shadow-xl shadow-indigo-600/30 flex items-center justify-center text-white transition-all active:scale-90 hover:scale-105"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+    </button>
+
+    <button
+      onClick={() => setCurrentView('shelf')}
+      className={`flex flex-col items-center gap-1 transition-all ${currentView === 'shelf' ? 'text-indigo-600 scale-110' : 'text-slate-400 opacity-60'}`}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+      <span className="text-[10px] font-black uppercase tracking-tighter">The Shelf</span>
+    </button>
+  </nav>
+);
+
+return (
+  <div className="max-w-md mx-auto min-h-screen bg-slate-100 shadow-2xl relative flex flex-col">
+    {currentView !== 'writer' && (
+      <Header
+        onBack={currentView !== 'home' && currentView !== 'shelf' && currentView !== 'settings' ? () => {
+          if (currentView === 'novel') { setSelectedNovelId(null); setCurrentView('home'); }
+          else setCurrentView('home');
+        } : undefined}
+        onHome={() => { setSelectedNovelId(null); setCurrentView('home'); }}
+        title={currentView === 'home' ? 'Library' : currentView === 'create' ? 'Inception' : currentView === 'shelf' ? 'The Shelf' : currentView === 'settings' ? 'Config' : 'Manuscript'}
+        subtitle={currentView === 'home' ? 'Your Sanctuary' : currentView === 'novel' ? selectedNovel?.title : currentView === 'settings' ? 'System' : currentView === 'shelf' ? 'Reference Materials' : undefined}
+        isOnline={isOnline}
+        actions={
+          <>
+            {currentView === 'home' && (
+              <button
+                onClick={() => setCurrentView('settings')}
+                className="w-10 h-10 rounded-2xl bg-white text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm border border-slate-100 flex items-center justify-center transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+              </button>
+            )}
+            {currentView === 'novel' && (
+              <button
+                onClick={handleExportPdf}
+                className="p-3 bg-white text-indigo-600 rounded-2xl shadow-sm border border-indigo-100 hover:scale-110 active:scale-95 transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+              </button>
+            )}
+          </>
+        }
+      />
+    )}
+    <main className={`flex-1 overflow-y-auto no-scrollbar ${currentView !== 'writer' ? 'pb-32' : ''}`}>
+      {currentView === 'home' && renderHome()}
+      {currentView === 'create' && renderCreate()}
+      {currentView === 'novel' && renderNovelDetail()}
+      {currentView === 'writer' && renderWriter()}
+      {currentView === 'shelf' && renderShelf()}
+      {currentView === 'settings' && (
+        <ErrorBoundary name="Settings View">
+          <Settings />
+        </ErrorBoundary>
+      )}
+    </main>
+
+    {currentView !== 'writer' && <BottomNav />}
+    <CharacterModal />
+    <LoreModal />
+    {isGenerating && (
+      <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-8 text-center">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl space-y-6 max-w-xs w-full transform animate-in fade-in zoom-in duration-300">
+          <div className="relative w-20 h-20 mx-auto">
+            <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
+            <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center text-indigo-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="font-display font-black text-xl text-slate-900 ink-loading tracking-tight">Drafting Manuscript...</p>
+            <p className="text-slate-400 text-sm leading-relaxed">The AI is composing original prose. This may take 15-30 seconds.</p>
+          </div>
+          <div className="flex gap-1 justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-200 animate-bounce [animation-delay:-0.3s]" />
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:-0.15s]" />
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" />
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
 }

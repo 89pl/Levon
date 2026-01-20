@@ -6,6 +6,32 @@ import { READING_TEMPLATES } from '../constants/templates';
 const Settings: React.FC = () => {
     const { settings, updateSettings, resetSettings } = useSettings();
 
+    // Load ALL fonts for preview when Settings page is active
+    // We strip weights/styles to keep the request size manageable for previews
+    React.useEffect(() => {
+        const linkId = 'settings-font-preview-loader';
+        if (document.getElementById(linkId)) return;
+
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+
+        // Construct URL for all fonts (weight 400 only for preview efficiency)
+        const families = SUPPORTED_FONTS.map(f => {
+            // Extract family name only, e.g., "Lora" from "Lora:ital,wght..."
+            const cleanName = f.urlParam.split(':')[0];
+            return `family=${cleanName}:wght@400`;
+        }).join('&');
+
+        link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
+        document.head.appendChild(link);
+
+        return () => {
+            const el = document.getElementById(linkId);
+            if (el) document.head.removeChild(el);
+        };
+    }, []);
+
     return (
         <div className="pb-32 animate-fade-in">
             <div className="p-8 space-y-12">
